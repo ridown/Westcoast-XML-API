@@ -4,6 +4,8 @@ namespace Ridown\Westcoast;
 
 use Ridown\Westcoast\Api\PNA;
 
+use GuzzleHttp\Client as GuzzleClient;
+
 class Westcoast
 {
     const BASE_URI = 'https://xmlportal.westcoast.co.uk/';
@@ -26,11 +28,23 @@ class Westcoast
   
     public function __construct(array $config, GuzzleClient $client = null)
     {
+        
+        /*
+            $config = [
+                'loginId' => env('WESTCOAST_LOGIN_ID'),
+                'password' => env('WESTCOAST_PASSWORD'),
+                'company' => env('WESTCOAST_COMPANY'),
+                'timeout' => null
+            ];
+        */
+        
+        
         $this->client = $client ?: $this->makeClient();
         $this->config = $config;
         $company = data_get($this->config, 'company');
         $this->base_uri = self::BASE_URI . "{$company}/inbound.php";
     
+        
         if(! $this->bearer){
             $this->refreshToken();
         }
@@ -44,7 +58,7 @@ class Westcoast
     private function makeClient(): GuzzleClient
     {
         return new GuzzleClient([
-            'timeout' => $this->config['timeout'] ?? 15
+            'timeout' => $this->config['timeout'] ?? 30
         ]);
     }
   
