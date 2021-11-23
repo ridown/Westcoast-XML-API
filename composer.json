@@ -1,0 +1,39 @@
+{
+    "name": "ridown/westcoast-xml-api",
+    "description": "Westcoast XML API wrapper",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Paul Robbins",
+            "email": "paul.robbins@e-giant.co.uk"
+        }
+    ],
+    "require": {
+        "guzzlehttp/guzzle": "^7"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ridown\\Westcoast\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Ridown\\Westcoast\\Tests\\": "tests"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Ridown\\Westcoast\\WestcoastServiceProvider"
+            ],
+            "aliases": {
+                "Westcoast": "Ridown\\Westcoast\\WestcoastFacade"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
