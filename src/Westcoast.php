@@ -2,9 +2,13 @@
 
 namespace Ridown\Westcoast;
 
-use Ridown\Westcoast\Api\PNA;
 
 use GuzzleHttp\Client as GuzzleClient;
+use Ridown\Westcoast\Api\Dispatch;
+use Ridown\Westcoast\Api\Order;
+use Ridown\Westcoast\Api\PNA;
+
+use SoapClient;
 
 class Westcoast
 {
@@ -26,7 +30,7 @@ class Westcoast
     /** @var string */
     protected $response;
   
-    public function __construct(array $config, GuzzleClient $client = null)
+    public function __construct(array $config = null, GuzzleClient $client = null)
     {
         
         /*
@@ -37,29 +41,72 @@ class Westcoast
                 'timeout' => null
             ];
         */
-        
-        
-        $this->client = $client ?: $this->makeClient();
-        $this->config = $config;
-        $company = data_get($this->config, 'company');
-        $this->base_uri = self::BASE_URI . "{$company}/inbound.php";
-    
-        
-        if(! $this->bearer){
-            $this->refreshToken();
+        if(!$config) {
+            $config = config('westcoast');
         }
+        
+        
+        
+        $this->config = $config;
+        $company_name = data_get($this->config, 'WESTCOAST_AUTH_USERNAME');
+        $this->base_uri = self::BASE_URI . "{$company_name}/inbound.php";
+    
+        $this->client = $client ?: $this->makeClient();
+    
+//        if(! $this->bearer){
+//            $this->refreshToken();
+//        }
     }
     
     public static function make(array $config, GuzzleClient $client = null): self
     {
         return new static ($config, $client);
     }
-  
-    private function makeClient(): GuzzleClient
+    
+    private function makeClient()
+    {
+        return $this->makeGuzzleClient();
+    }
+    
+    
+    private function makeGuzzleClient()
     {
         return new GuzzleClient([
-            'timeout' => $this->config['timeout'] ?? 30
+            'timeout' => data_get($this->config, 'timeout', 30),
+            'base_url' => $this->base_uri,
         ]);
+    }
+    
+    /*
+     * furture use..  the Westcoast API does not support proper SOAP
+     * is more of a SOAP string structure
+     */
+    private function makeSoapClient()
+    {
+        $context = stream_context_create([
+            'http' => [
+                'protocol_version' => '1.1',
+                'user_agent'       => 'RIDOWN Titan',
+                //                'header'           => 'AgentID: '. config('vodafone.agentid'),
+            ],
+        ]);
+    
+        $options = [
+            'location'       => $this->base_uri,
+            'uri'            => 'urn:xmethods-delayed-quotes',
+            'trace'          => 1,
+            'exceptions'     => 0,
+            'stream_context' => $context,
+            'soap_version'   => SOAP_1_1,
+            'cache_wsdl'     => WSDL_CACHE_NONE,
+            'authentication' => SOAP_AUTHENTICATION_BASIC,
+            'login'          => data_get($this->config, 'auth_username'),
+            'password'       => data_get($this->config, 'auth_password'),
+        ];
+    
+    
+    
+        return new SoapClient(null,$options);
     }
   
     private function refreshToken() : void
@@ -94,7 +141,17 @@ class Westcoast
 
     public function PNA(): PNA
     {
-        return new PNA($this->client, $this->server, $this->bearer);
+        return new PNA($this->client, $this->config);
+    }
+    
+    public function Order(): Order
+    {
+        return new Order($this->client, $this->config);
+    }
+    
+    public function Dispatch(): Dispatch
+    {
+        return new Dispatch($this->client, $this->config);
     }
   
   
